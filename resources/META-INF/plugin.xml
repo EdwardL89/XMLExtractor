@@ -12,7 +12,7 @@
 
   <idea-version since-build="131"/>
 
-  <vendor email="edwardjamesliu@gmail.com">EightNine Plugins</vendor>
+  <vendor email="ejliu89@gmail.com">EightNine Plugins</vendor>
 
   <description>Extracts and instantiates all UI elements from an XML layout file</description>
 

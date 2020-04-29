@@ -82,12 +82,10 @@ class XmlExtractor: AnAction() {
 
     private fun operateOnXmlFile(xmlFile: Array<out PsiFile>) {
         if (!verifyFile(xmlFile)) return
-        val xmlFactoryObject = XmlPullParserFactory.newInstance()
-        val myParser = xmlFactoryObject.newPullParser()
+        val myParser = XmlPullParserFactory.newInstance().newPullParser()
         virtualFile = xmlFile.elementAt(0).virtualFile
         myParser.setInput(virtualFile.inputStream, null)
-        val typeToIdMap = getTypeAndIdMap(myParser)
-        generateInstantiations(typeToIdMap)
+        generateInstantiations(getTypeAndIdMap(myParser))
     }
 
     private fun verifyFile(xmlFile: Array<out PsiFile>): Boolean {
@@ -117,8 +115,7 @@ class XmlExtractor: AnAction() {
     }
 
     private fun generateInstantiations(typeToIdMap: MutableList<Pair<String, String>>) {
-        val currentPsiFile = actionEvent.getData(CommonDataKeys.PSI_FILE)
-        val currentLanguage = currentPsiFile?.language?.displayName!!
+        val currentLanguage = actionEvent.getData(CommonDataKeys.PSI_FILE)?.language?.displayName!!
         val caretModel = editor.caretModel
         caretModel.primaryCaret.selectLineAtCaret() //Move the cursor to the end of the line
         val indexToInsertStatements = caretModel.primaryCaret.selectionEnd
@@ -132,8 +129,7 @@ class XmlExtractor: AnAction() {
 
     private fun generateJavaStatements(typeToIdMap: MutableList<Pair<String, String>>, indexToInsertStatements: Int) {
         val javaStatements = StringBuilder()
-        javaStatements.append("\t/*\n")
-        javaStatements.append("\tXML Extraction for: $userSelection\n\n")
+        javaStatements.append("\t/*\n\tXML Extraction for: $userSelection\n\n")
         generateJavaSplits(typeToIdMap, javaStatements)
         generateJavaNonSplits(typeToIdMap, javaStatements)
         javaStatements.append("\t*/\n")
@@ -141,8 +137,8 @@ class XmlExtractor: AnAction() {
     }
 
     private fun generateJavaSplits(typeToIdMap: MutableList<Pair<String, String>>, javaStatements: StringBuilder) {
-        javaStatements.append("\t1) Split Declaration & Instantiation:\n\n")
         val linesTobeSorted = mutableListOf<String>()
+        javaStatements.append("\t1) Split Declaration & Instantiation:\n\n")
         typeToIdMap.forEach { linesTobeSorted.add("\t\tprivate ${it.first} ${it.second};\n") }
         linesTobeSorted.sortedBy { line -> line.length }.forEach { javaStatements.append(it) }
         javaStatements.append("\n")
@@ -160,8 +156,7 @@ class XmlExtractor: AnAction() {
 
     private fun generateKotlinStatements(typeToIdMap: MutableList<Pair<String, String>>, indexToInsertStatements: Int) {
         val kotlinStatements = StringBuilder()
-        kotlinStatements.append("\t/*\n")
-        kotlinStatements.append("\tXML Extraction for: $userSelection\n\n")
+        kotlinStatements.append("\t/*\n\tXML Extraction for: $userSelection\n\n")
         generateKotlinSplits(typeToIdMap, kotlinStatements)
         generateKotlinNonSplits(typeToIdMap, kotlinStatements)
         if (usingKotlinAndroidExtensions()) generateXMLIds(typeToIdMap, kotlinStatements)
@@ -188,8 +183,7 @@ class XmlExtractor: AnAction() {
 
     private fun generateXMLIds(typeToIdMap: MutableList<Pair<String, String>>, kotlinStatements: StringBuilder) {
         val linesTobeSorted = mutableListOf<String>()
-        kotlinStatements.append("\n\t3) 'kotlin-android-extensions' plugin detected." +
-                " Here are all IDs of the XML elements in $userSelection:\n\n")
+        kotlinStatements.append("\n\t3) 'kotlin-android-extensions' plugin detected. Here are all IDs of the XML elements in $userSelection:\n\n")
         typeToIdMap.forEach { linesTobeSorted.add("\t\t${it.second}\n") }
         linesTobeSorted.sortedBy { line -> line.length }.forEach { kotlinStatements.append(it) }
     }
