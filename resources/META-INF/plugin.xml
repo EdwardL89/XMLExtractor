@@ -10,7 +10,7 @@
 
   <depends>com.intellij.modules.lang</depends>
 
-  <idea-version since-build="131"/>
+  <idea-version since-build="182"/>
 
   <vendor email="ejliu89@gmail.com">EightNine Plugins</vendor>
 

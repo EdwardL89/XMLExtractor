@@ -4,24 +4,25 @@ package core
  * Author: Edward Liu
  */
 
-import com.intellij.notification.NotificationDisplayType
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
+import java.lang.StringBuilder
 import com.intellij.psi.PsiFile
-import com.intellij.psi.search.FilenameIndex
-import com.intellij.psi.search.GlobalSearchScope
 import org.xmlpull.v1.XmlPullParser
+import com.intellij.openapi.editor.Editor
 import org.xmlpull.v1.XmlPullParserFactory
 import java.lang.IndexOutOfBoundsException
-import java.lang.StringBuilder
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.notification.NotificationType
+import com.intellij.notification.NotificationGroup
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.notification.NotificationDisplayType
+import com.intellij.openapi.fileEditor.FileDocumentManager
 
 /**
  * Goes through the user-highlighted xml file and instantiates all UI elements in the current file.
@@ -45,6 +46,7 @@ class XmlExtractor: AnAction() {
     }
 
     override fun actionPerformed(e: AnActionEvent) {
+        FileDocumentManager.getInstance().saveAllDocuments()
         actionEvent = e
         userSelection = ""
         editor = e.getRequiredData(CommonDataKeys.EDITOR)
@@ -150,7 +152,7 @@ class XmlExtractor: AnAction() {
     private fun generateJavaNonSplits(typeToIdMap: MutableList<Pair<String, String>>, javaStatements: StringBuilder) {
         val linesTobeSorted = mutableListOf<String>()
         javaStatements.append("\n\t2) Single line Declaration & Instantiation:\n\n")
-        typeToIdMap.forEach { linesTobeSorted.add("\t\tprivate ${it.first} ${it.second} = findViewById(R.id.${it.second});\n") }
+        typeToIdMap.forEach { linesTobeSorted.add("\t\t${it.first} ${it.second} = findViewById(R.id.${it.second});\n") }
         linesTobeSorted.sortedBy { line -> line.length }.forEach { javaStatements.append(it) }
     }
 
