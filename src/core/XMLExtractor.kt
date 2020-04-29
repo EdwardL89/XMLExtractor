@@ -96,30 +96,27 @@ class XmlExtractor: AnAction() {
             true
         } catch (exception: IndexOutOfBoundsException) {
             notifyUser("File not found",
-                    "The characters you highlighted do not match the names of any files in your project. " +
+                    "The text highlighted does not match any files in your project. " +
                             "Highlight the entire xml file name without the '.xml' extension.")
             false
         }
     }
 
-    private fun getTypeAndIdMap(myParser: XmlPullParser): MutableMap<String, String> {
-        val typeToIdMap = mutableMapOf<String, String>()
+    private fun getTypeAndIdMap(myParser: XmlPullParser): MutableList<Pair<String, String>> {
+        val typeToIdMap = mutableListOf<Pair<String, String>>()
         var currentEvent = myParser.eventType
         while (currentEvent != XmlPullParser.END_DOCUMENT) {
             val nameOfCurrentElement = myParser.name
             if (currentEvent == XmlPullParser.START_TAG) {
                 val id = myParser.getAttributeValue(null, "android:id")
-                if (id != null) {
-                    val strippedId = id.drop(5)
-                    typeToIdMap[nameOfCurrentElement] = strippedId
-                }
+                if (id != null) typeToIdMap.add(Pair(nameOfCurrentElement, id.drop(5)))
             }
             currentEvent = myParser.next()
         }
         return typeToIdMap
     }
 
-    private fun generateInstantiations(typeToIdMap: MutableMap<String, String>) {
+    private fun generateInstantiations(typeToIdMap: MutableList<Pair<String, String>>) {
         val currentPsiFile = actionEvent.getData(CommonDataKeys.PSI_FILE)
         val currentLanguage = currentPsiFile?.language?.displayName!!
         val caretModel = editor.caretModel
@@ -133,7 +130,7 @@ class XmlExtractor: AnAction() {
         caretModel.primaryCaret.removeSelection()
     }
 
-    private fun generateJavaStatements(typeToIdMap: MutableMap<String, String>, indexToInsertStatements: Int) {
+    private fun generateJavaStatements(typeToIdMap: MutableList<Pair<String, String>>, indexToInsertStatements: Int) {
         val javaStatements = StringBuilder()
         javaStatements.append("\t/*\n")
         javaStatements.append("\tXML Extraction for: $userSelection\n\n")
@@ -143,19 +140,25 @@ class XmlExtractor: AnAction() {
         writeToDocument(indexToInsertStatements, javaStatements)
     }
 
-    private fun generateJavaSplits(typeToIdMap: MutableMap<String, String>, javaStatements: StringBuilder) {
+    private fun generateJavaSplits(typeToIdMap: MutableList<Pair<String, String>>, javaStatements: StringBuilder) {
         javaStatements.append("\t1) Split Declaration & Instantiation:\n\n")
-        typeToIdMap.forEach { javaStatements.append("\t\tprivate ${it.key} ${it.value};\n") }
+        val linesTobeSorted = mutableListOf<String>()
+        typeToIdMap.forEach { linesTobeSorted.add("\t\tprivate ${it.first} ${it.second};\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { javaStatements.append(it) }
         javaStatements.append("\n")
-        typeToIdMap.forEach { javaStatements.append("\t\t${it.value} = findViewById(R.id.${it.value});\n") }
+        linesTobeSorted.clear()
+        typeToIdMap.forEach { linesTobeSorted.add("\t\t${it.second} = findViewById(R.id.${it.second});\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { javaStatements.append(it) }
     }
 
-    private fun generateJavaNonSplits(typeToIdMap: MutableMap<String, String>, javaStatements: StringBuilder) {
+    private fun generateJavaNonSplits(typeToIdMap: MutableList<Pair<String, String>>, javaStatements: StringBuilder) {
+        val linesTobeSorted = mutableListOf<String>()
         javaStatements.append("\n\t2) Single line Declaration & Instantiation:\n\n")
-        typeToIdMap.forEach { javaStatements.append("\t\tprivate ${it.key} ${it.value} = findViewById(R.id.${it.value});\n") }
+        typeToIdMap.forEach { linesTobeSorted.add("\t\tprivate ${it.first} ${it.second} = findViewById(R.id.${it.second});\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { javaStatements.append(it) }
     }
 
-    private fun generateKotlinStatements(typeToIdMap: MutableMap<String, String>, indexToInsertStatements: Int) {
+    private fun generateKotlinStatements(typeToIdMap: MutableList<Pair<String, String>>, indexToInsertStatements: Int) {
         val kotlinStatements = StringBuilder()
         kotlinStatements.append("\t/*\n")
         kotlinStatements.append("\tXML Extraction for: $userSelection\n\n")
@@ -168,25 +171,45 @@ class XmlExtractor: AnAction() {
 
     private fun usingKotlinAndroidExtensions(): Boolean {
         val buildGradleFile =  FilenameIndex.getFilesByName(project, "build.gradle", GlobalSearchScope.projectScope(project))
-        return buildGradleFile.elementAt(0).text.contains("apply plugin: 'kotlin-android-extensions'")
+        return testForPluginExistence(buildGradleFile)
     }
 
-    private fun generateXMLIds(typeToIdMap: MutableMap<String, String>, kotlinStatements: StringBuilder) {
+    private fun testForPluginExistence(buildGradleFile: Array<PsiFile>): Boolean {
+        try {
+            val firstFileHasAnko = buildGradleFile.elementAt(0).text.contains("apply plugin: 'kotlin-android-extensions'")
+            if (firstFileHasAnko) return true
+            val secondFileHasAnko = buildGradleFile.elementAt(1).text.contains("apply plugin: 'kotlin-android-extensions'")
+            if (secondFileHasAnko) return true
+        } catch (exception: IndexOutOfBoundsException) {
+            return false
+        }
+        return false
+    }
+
+    private fun generateXMLIds(typeToIdMap: MutableList<Pair<String, String>>, kotlinStatements: StringBuilder) {
+        val linesTobeSorted = mutableListOf<String>()
         kotlinStatements.append("\n\t3) 'kotlin-android-extensions' plugin detected." +
                 " Here are all IDs of the XML elements in $userSelection:\n\n")
-        typeToIdMap.forEach { kotlinStatements.append("\t\t${it.value}\n") }
+        typeToIdMap.forEach { linesTobeSorted.add("\t\t${it.second}\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { kotlinStatements.append(it) }
     }
 
-    private fun generateKotlinSplits(typeToIdMap: MutableMap<String, String>, kotlinStatements: StringBuilder) {
+    private fun generateKotlinSplits(typeToIdMap: MutableList<Pair<String, String>>, kotlinStatements: StringBuilder) {
+        val linesTobeSorted = mutableListOf<String>()
         kotlinStatements.append("\t1) Split Declaration & Instantiation:\n\n")
-        typeToIdMap.forEach { kotlinStatements.append("\t\tprivate lateinit var ${it.value}: ${it.key}\n") }
+        typeToIdMap.forEach { linesTobeSorted.add("\t\tprivate lateinit var ${it.second}: ${it.first}\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { kotlinStatements.append(it) }
         kotlinStatements.append("\n")
-        typeToIdMap.forEach { kotlinStatements.append("\t\t${it.value} = findViewById(R.id.${it.value})\n") }
+        linesTobeSorted.clear()
+        typeToIdMap.forEach { linesTobeSorted.add("\t\t${it.second} = findViewById(R.id.${it.second})\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { kotlinStatements.append(it) }
     }
 
-    private fun generateKotlinNonSplits(typeToIdMap: MutableMap<String, String>, kotlinStatements: StringBuilder) {
+    private fun generateKotlinNonSplits(typeToIdMap: MutableList<Pair<String, String>>, kotlinStatements: StringBuilder) {
+        val linesTobeSorted = mutableListOf<String>()
         kotlinStatements.append("\n\t2) Single line Declaration & Instantiation:\n\n")
-        typeToIdMap.forEach { kotlinStatements.append("\t\tval ${it.value} = findViewById<${it.key}>(R.id.${it.value});\n") }
+        typeToIdMap.forEach { linesTobeSorted.add("\t\tval ${it.second} = findViewById<${it.first}>(R.id.${it.second});\n") }
+        linesTobeSorted.sortedBy { line -> line.length }.forEach { kotlinStatements.append(it) }
     }
 
     private fun writeToDocument(index: Int, statements: StringBuilder) {
