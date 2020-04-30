@@ -10,5 +10,22 @@ Extracts and instantiates all UI elements of an XML layout file with one command
 </ul>
 <br>
 
+## Download
 Click [here](https://plugins.jetbrains.com/plugin/14230-xml-layout-extractor) to view the plugin home page and download from the Jetbrains Plugins Repository.<br/>
+Or,<br/>
+Open the Plugins Marketplace window within your IDE and type "XML Extractor" and install from there.<br>
 
+## Usage
+Once the plugin is installed follow these steps to extract instantiations of the elements within the XML file:
+<br>
+<ul>
+  <li>Highlight the name of the XML layout file (for example, "activity_main")</li>
+  <li>Click "Tools"</li>
+  <li>Click "XML Actions"</li>
+  <li>Click "Generate UI element instantiations"</li>
+</ul>
+<br>
+
+The generated extractions will be safely inserted in the currently opened document in your IDE on the line below the highlighted file.
+
+## Share this plugin with your friends and co-workers, and spend more time developing and being productive. Thank you!
