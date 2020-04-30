@@ -1,8 +1,9 @@
-package core
-
 /**
- * Author: Edward Liu
+ * @author: Edward Liu
+ * @version: 1.0.0
  */
+
+package core
 
 import java.lang.StringBuilder
 import com.intellij.psi.PsiFile
@@ -24,11 +25,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.notification.NotificationDisplayType
 import com.intellij.openapi.fileEditor.FileDocumentManager
 
-/**
- * Goes through the user-highlighted xml file and instantiates all UI elements in the current file.
- * xml file must be a layout xml file
- */
-class XmlExtractor: AnAction() {
+private class XmlExtractor: AnAction() {
 
     private lateinit var editor: Editor
     private lateinit var project: Project
@@ -39,8 +36,8 @@ class XmlExtractor: AnAction() {
 
     override fun update(e: AnActionEvent) {
         val project = e.project
-        val editor = e.getData(CommonDataKeys.EDITOR)
         var enablePlugin = false
+        val editor = e.getData(CommonDataKeys.EDITOR)
         if (editor != null && project != null) enablePlugin = editor.caretModel.allCarets.isNotEmpty()
         e.presentation.isEnabledAndVisible = enablePlugin
     }
@@ -52,7 +49,7 @@ class XmlExtractor: AnAction() {
         editor = e.getRequiredData(CommonDataKeys.EDITOR)
         document = editor.document
         val hasSelection = editor.selectionModel.hasSelection()
-        if (!hasSelection) notifyUser("Nothing Highlighted", "Highlight an XML file name with your cursor before using the shortcut.")
+        if (!hasSelection) notifyUser("XML Extractor", "Nothing highlighted: Highlight an XML file name with your cursor before using the shortcut.")
         else continueWithExtraction()
     }
 
@@ -95,8 +92,8 @@ class XmlExtractor: AnAction() {
             xmlFile.elementAt(0)
             true
         } catch (exception: IndexOutOfBoundsException) {
-            notifyUser("File not found",
-                    "The text highlighted does not match any files in your project. " +
+            notifyUser("XML Extractor",
+                    "File not found: The text highlighted does not match any files in your project. " +
                             "Highlight the entire xml file name without the '.xml' extension.")
             false
         }
@@ -124,7 +121,7 @@ class XmlExtractor: AnAction() {
         when (currentLanguage) {
             "Java" -> generateJavaStatements(typeToIdMap, indexToInsertStatements)
             "Kotlin" -> generateKotlinStatements(typeToIdMap, indexToInsertStatements)
-            else -> notifyUser("Language not Supported", "This plugin currently does not support $currentLanguage.")
+            else -> notifyUser("XML Extractor", "Language not Supported: This plugin currently does not support $currentLanguage.")
         }
         caretModel.primaryCaret.removeSelection()
     }

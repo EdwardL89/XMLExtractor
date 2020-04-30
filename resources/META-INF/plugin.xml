@@ -2,7 +2,7 @@
 
   <version>1.0.0</version>
 
-  <name>Android XML Layout Extractor</name>
+  <name>XML Layout Extractor</name>
 
   <id>org.eightnineplugins.XMLExtractor</id>
 
@@ -10,11 +10,11 @@
 
   <depends>com.intellij.modules.lang</depends>
 
-  <idea-version since-build="182"/>
+  <idea-version since-build="171"/>
 
   <vendor email="ejliu89@gmail.com">EightNine Plugins</vendor>
 
-  <description>Extracts and instantiates all UI elements from an XML layout file</description>
+  <description>Extracts and instantiates all UI elements from an XML layout file for Android development.</description>
 
   <actions>
     <group id="Plugin.TopMenu" text="Extract XML">
