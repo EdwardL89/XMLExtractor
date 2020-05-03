@@ -14,6 +14,8 @@
 
   <vendor email="ejliu89@gmail.com">EightNine Plugins</vendor>
 
+  <change-notes>Updated description to list all features and to help determine if this plugin is for you.</change-notes>
+
   <description>
     <![CDATA[
         Extracts and instantiates all UI elements of an XML layout file with one command for Android projects. Features:
